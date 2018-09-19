@@ -2,34 +2,6 @@
 #include <M5Stack.h>
 #include <SimpleDHT.h>
 
-////////////////////////////// API REST headers ///////////////////////////
-#include <ArduinoJson.h>
-#include <WiFi.h>
-#include <ArduinoHttpClient.h>
-#include <Arduino.h>
-
-const char* ssid     = "Alestis_invitados"; // Your WiFi ssid
-const char* password = "L2wifi2L"; //Your Wifi password
-
-WiFiClient client;
-int status = WL_IDLE_STATUS;
-
-// get this from the Thingsboard dashboard: it is the device token
-String device_secret_key = "DHT_FROM_M5STACK";
-
-// Thingsboard API parameters
-char server[] = "ec2-34-245-115-53.eu-west-1.compute.amazonaws.com";
-String path = "/api/v1/";
-int port = 80;
-
-StaticJsonDocument<200> jsonBuffer;
-StaticJsonDocument<200> jsonBuffer2;
-HttpClient httpClient = HttpClient(client, server, port);
-JsonObject root = jsonBuffer.to<JsonObject>();
-JsonObject root2 = jsonBuffer.to<JsonObject>(); 
-
-//////////////////////////////////////////////////////////////////////////////
-
 // definição das cores que serão utilizadas
 #define BLACK           0x0000
 #define RED             0xF800
@@ -76,24 +48,6 @@ configure the font as well as text colors, and position the cursor for writing.
 */
 void setup(void) {
   Serial.begin(115200);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
-
-////////////////////////////// API REST setup ///////////////////////////
-  // attempt to connect to WiFi network:
-  while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to SSID: ");
-    Serial.println(ssid);
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-    status = WiFi.begin(ssid, password);
-    // wait 10 seconds for connection:
-    delay(10000);
-  }
-  
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());  
-//////////////////////////////////////////////////////////////////////////////
 
   //Inicializa o M5Stack
   M5.begin();
@@ -119,23 +73,6 @@ void setup(void) {
   M5.Lcd.print(" U: "); //indicando a umidade
   }
 
-  /////////////// auxiliar function for REST API /////////////////////////////////
-
-  void postToThingsboard(JsonObject& data, String token) {
-  String dataStr = ""; 
-  serializeJson(data, dataStr);
-  httpClient.beginRequest();
-  httpClient.post(path + token + "/attributes");
-  httpClient.sendHeader("Content-Type", "application/json");
-  httpClient.sendHeader("Content-Length", dataStr.length());
-  // Not needing authorization token out of the URL
-  // httpClient.sendHeader("Authorization", "Bearer " + String(device_secret_key));
-  httpClient.beginBody();
-  httpClient.print(dataStr);  
-  httpClient.endRequest();
-}
-/////////////////////////////////////////////////////////////////////////////////
-
   /*///////////////////// LOOP ///////////////////////////////////////////////
   In the first part of the Loop, we read the temperature and humidity,
   map the value of the variables for placement on the graph, and
@@ -160,39 +97,6 @@ void setup(void) {
   Serial.print("Sample OK: ");
   Serial.print((int)temperatura); Serial.print(" *C, "); 
   Serial.print((int)umidade); Serial.println(" H");
-
-////////////////////////////// API REST loop /////////////////////////////////
-  JsonObject& root = jsonBuffer.createObject();
-  root["name"] = "temperatura";
-  root["data"] = temperatura; //21.5;
-
-  JsonObject& root2 = jsonBuffer.createObject();
-  root2["name"] = "humedad";
-  root2["data"] = umidade; //55;
-  Serial.println("connecting...");
-  
-  // if you get a connection, report back via serial:
-  if (client.connect(server, port)) {
-    Serial.println("connected");
-    postToThingsboard(root, device_secret_key);
-    postToThingsboard(root2, device_secret_key);
-  } else {
-    // if you didn't get a connection to the server:
-    Serial.println("connection failed");
-  }
-  // if there are incoming bytes available
-  // from the server, read them and print them:
-  if (client.available()) {
-    char c = client.read();
-    Serial.print(c);
-  }
-
-  // if the server's disconnected, stop the client:
-  if (!client.available() && !client.connected()) {
-    Serial.println();
-    client.stop();
-  }
-//////////////////////////////////////////////////////////////////////////////
   
   //mapeando o valor das variáveis para colocar no gráfico
   //necessário pois o display tem 240px de altura e separamos apenas 180 para o gráfico
