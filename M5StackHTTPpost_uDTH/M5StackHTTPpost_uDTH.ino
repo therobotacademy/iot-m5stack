@@ -169,7 +169,8 @@ void setup(void) {
     HTTPClient http;   
     http.begin("http://ec2-34-245-115-53.eu-west-1.compute.amazonaws.com/api/v1/DHT_FROM_M5STACK/attributes");  //Specify destination for HTTP request
     http.addHeader("Content-Type", "application/json");             //Specify content-type header
-    int httpResponseCode = http.POST("{\"temperatura\": 26.99,\"humedad\" : 60.5}");   //Send the actual POST request
+    int httpResponseCode = http.POST("{\"temperatura\": " + String(temperatura) + ", \"humedad\": " + String(umidade) + "}"); 
+    //int httpResponseCode = http.POST("{\"temperatura\": 26.99,\"humedad\" : 60.5}");   //Send the actual POST request
     // int httpResponseCode = http.POST(" "{\"temperatura\": " + String(temperatura) + ",\"humedad\" : " + String(umidade) + "}"");
     if(httpResponseCode>0)  {
       String response = http.getString();                       //Get the response to the request
